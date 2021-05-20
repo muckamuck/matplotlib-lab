@@ -1,5 +1,6 @@
 import logging
 import sys
+import json
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -7,54 +8,35 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
-def draw_something():
-    logger.info('draw_something() called')
-    xpoints = np.array([
-        732, 733, 734, 735, 736,
-        737, 738, 739, 740, 741,
-        742, 743, 744, 745, 746,
-        747, 748, 749, 750, 751,
-        752, 753, 754, 755, 756,
-        757, 758, 759, 760, 761,
-        762, 763, 764, 765, 766,
-        767, 768, 769, 770, 771,
-        772, 773, 774, 775, 776,
-        777, 778, 779, 780, 781,
-        782, 783, 784, 785, 786,
-        787, 788, 789, 790, 791,
-        792, 793, 794, 795, 796,
-        797, 798, 799, 800, 801,
-        802, 803, 804, 805, 806,
-        807, 808, 809, 810, 811,
-        812, 813, 814, 815, 816,
-        817, 818, 819, 820, 821,
-        822, 823, 824, 825, 826,
-        827, 828, 829, 830, 831
-    ])
-    ypoints = np.array([
-        1, 2, 3, 4, 5,
-        6, 7, 8, 9, 10,
-        11, 12, 13, 14, 15,
-        16, 17, 18, 19, 20,
-        21, 22, 23, 24, 25,
-        26, 27, 28, 29, 30,
-        31, 32, 33, 34, 35,
-        36, 37, 38, 39, 40,
-        41, 42, 43, 44, 45,
-        46, 47, 48, 49, 50,
-        51, 52, 53, 54, 55,
-        56, 57, 58, 59, 60,
-        61, 62, 63, 64, 65,
-        66, 67, 68, 69, 70,
-        71, 72, 73, 74, 75,
-        76, 77, 78, 79, 80,
-        81, 82, 83, 84, 85,
-        86, 87, 88, 89, 90,
-        91, 92, 93, 94, 95,
-        96, 97, 98, 99, 100
-    ])
+def read_metrics(filename):
+    time_stamps = None
+    values = None
 
-    plt.plot(xpoints, ypoints)
+    with open(filename, 'r') as f:
+        response = json.load(f)
+
+        if len(response.get('MetricDataResults', [])) == 1:
+            result_set = response.get('MetricDataResults')[0]
+            time_stamps = list()
+            for buf in result_set.get('Timestamps', []):
+                time_stamps.append(buf[:16])
+            values = result_set.get('Values', [])
+
+    return time_stamps, values
+
+
+def draw_something(xstuff, ystuff):
+    logger.info('draw_something() called')
+    xpoints = np.array(xstuff)
+    ypoints = np.array(ystuff)
+
+    plt.plot(xstuff, ystuff)
+    plt.xticks(xstuff, xstuff, rotation=-90)
+    # plt.tight_layout(rect=(0.1, 0.1, 1, 1))
+    plt.tight_layout(pad=2.25)  # , w_pad=1.5, h_pad=0)
+    plt.title("SMB v3 Connections (average / hour) 2")
+    plt.xlabel("Time")
+    plt.ylabel("Connections")
     plt.savefig('food.png')
 
 
@@ -66,4 +48,5 @@ if __name__ == '__main__':
         datefmt='%Y/%m/%d-%H:%M:%S'
     )
 
-    draw_something()
+    xstuff, ystuff = read_metrics(sys.argv[1])
+    draw_something(xstuff, ystuff)
